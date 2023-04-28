@@ -8,7 +8,7 @@ db.getCollection("restaurants").aggregate([
             "_id":0,
             "restaurant_id":1,
             "borough":1,
-            "cuisine":1
+            "cuisine":0
         }
     }
 ])
