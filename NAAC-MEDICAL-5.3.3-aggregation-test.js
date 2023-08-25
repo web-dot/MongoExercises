@@ -1,0 +1,127 @@
+db.getCollection("dhi_committee_guideline_mapper").aggregate([
+    {
+        "$unwind":"$academicYearWiseEvent"
+    },
+    {
+        "$match":{
+            "accreditationBody": "NAAC",
+            "guidelineId":"5.3.3",
+            "academicYearWiseEvent.academicYear":"2022-23"
+        }
+    },
+    {
+        "$project":{
+            "eventLocalField":{
+                "$map":{
+                    "input":{
+                        "$map":{
+                            "input":"$academicYearWiseEvent.mappedEvents",
+                            "in":{
+                                "$arrayElemAt":[
+                                    {
+                                        "$objectToArray":"$$this"
+                                    },
+                                    1
+                                ]
+                            }
+                        }
+                    },
+                    "in":"$$this.v"
+                }
+            }
+        }
+    },
+    {
+        "$unwind":{
+            "path":"$eventLocalField",
+            "preserveNullAndEmptyArrays":true
+        }
+    },
+    {
+        "$lookup":{
+            "from":"dhi_event",
+            "localField":"eventLocalField",
+            "foreignField":"_id",
+            "as":"events"
+        }
+    },
+    {
+      "$project":{
+        "_id":"$events._id",
+        "eventType":"$events.eventType",
+        "degree":"$events.degree",
+        "department":"$events.department",
+        "degreeId":"$events.degreeId",
+        "eventName":"$events.name",
+        "eventId":"$events.id",
+        "eventDate":"$events.fromDate",
+        "eventLevel":"$events.level",
+        "participants":"$events.participants",
+        "eventLevelOrganized":"$events.eventLevelOrganized",
+        "fileData":"$events.eventProceedings.fileData"
+      }  
+    },
+    {
+        "$unwind":"$participants"
+    },
+    {
+        "$lookup":{
+            "from":"dhi_user",
+            "localField":"participants._id",
+            "foreignField":"_id",
+            "as":"users"
+        }
+    },
+    {
+        "$unwind":{
+            "path":"$users",
+            "preserveNullAndEmptyArrays":true
+        }
+    },
+    {
+        "$group":{
+            "_id":{
+                "_id":"$_id",
+                "eventType":"$eventType",
+                "degree":"$degree",
+                "degreeId":"$degreeId",
+                "eventId":"$eventId",
+                "eventName":"$eventName",
+                "eventDate":"$eventDate",
+                "eventLevel":"$eventLevel",
+                "department":"$department",
+                "eventLevelOrganized":"$eventLevelOrganized"
+            },
+            "users":{
+                "$push":"$users"
+            },
+            "fileData":{
+                "first": "$fileData"
+            }
+        }
+    },
+    {
+        "$project":{
+            "id":"_id.id",
+            "eventType":"$_id.eventType",
+            "degree":"$_id_degree",
+            "eventName":"$_id.eventName",
+            "eventDate":"$_id.eventDate",
+            "degreeId":"$_id.degreeId",
+            "eventLevel":"$_id.eventLevel",
+            "eventId":"$_id.eventId",
+            "department":"$_id.department",
+            "eventLevelOrganized":"$_id.eventLevelOrganized",
+            "users":1,
+            "fileData":1
+        }
+    }
+])
+
+
+
+
+
+
+
+
